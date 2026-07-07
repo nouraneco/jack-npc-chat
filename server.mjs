@@ -14,6 +14,7 @@ await loadEnv(path.join(ROOT, ".env"));
 const PORT = Number(process.env.PORT || 3000);
 const MODEL = process.env.OPENAI_MODEL || "gpt-5.4-mini";
 const HOST = process.env.HOST || (process.env.RENDER ? "0.0.0.0" : "127.0.0.1");
+const AI_ENABLED = Boolean(process.env.OPENAI_API_KEY) && process.env.DEMO_MODE !== "1";
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -47,14 +48,44 @@ function sessionPath(id) {
   return path.join(SESSION_DIR, `${safeId(id, "guest")}.json`);
 }
 
+function affectionStage(npc, value) {
+  return npc.affectionSystem?.stages?.find(stage => value >= stage.min && value <= stage.max)
+    || { id: "normal", label: "中立" };
+}
+
+function syncDerivedState(session, npc) {
+  if (!Number.isFinite(session.affection)) {
+    session.affection = Number.isFinite(session.trust)
+      ? Math.max(0, Math.min(100, session.trust * 20))
+      : (npc.affectionSystem?.initial ?? 35);
+  }
+  session.affection = Math.max(0, Math.min(100, session.affection));
+  session.trust = session.affection < 20 ? 0 : session.affection < 40 ? 1 : session.affection < 60 ? 2 : session.affection < 80 ? 3 : session.affection < 95 ? 4 : 5;
+  session.turnCount ??= 0;
+  session.alert ??= 2;
+  session.fear ??= 1;
+  session.anger ??= 0;
+  session.affectionEvents ??= [];
+  session.affectionHistory ??= [];
+  const stage = affectionStage(npc, session.affection);
+  if (session.fear >= 4) session.personalityMode = "afraid";
+  else if (session.anger >= 4) session.personalityMode = "angry";
+  else session.personalityMode = stage.id;
+  return stage;
+}
+
 async function loadSession(id, npc) {
   try {
-    return JSON.parse(await fs.readFile(sessionPath(id), "utf8"));
+    const session = JSON.parse(await fs.readFile(sessionPath(id), "utf8"));
+    syncDerivedState(session, npc);
+    return session;
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
     const session = {
-      id: safeId(id, "guest"), npcId: npc.id, trust: 1, alert: 2, fear: 1,
-      clues: [], revealed: [], history: [{ role: "assistant", content: npc.opening }],
+      id: safeId(id, "guest"), npcId: npc.id, affection: npc.affectionSystem?.initial ?? 35,
+      trust: 1, alert: 2, fear: 1, anger: 0, personalityMode: "alert", turnCount: 0,
+      clues: [], revealed: [], affectionEvents: [], affectionHistory: [],
+      history: [{ role: "assistant", content: npc.opening }],
       updatedAt: new Date().toISOString()
     };
     await saveSession(session);
@@ -83,15 +114,38 @@ function allowedInformation(npc, session, message) {
   return allowed;
 }
 
-function updateState(session, message) {
-  const respectful = ["ありがとう", "助け", "守る", "信じる", "お願い"].some(k => message.includes(k));
-  const hostile = ["犯人だ", "嘘つき", "脅す", "黙れ"].some(k => message.includes(k));
-  if (respectful) session.trust = Math.min(5, session.trust + 1);
-  if (hostile) { session.trust = Math.max(0, session.trust - 1); session.alert = Math.min(5, session.alert + 1); }
+function updateState(npc, session, message) {
+  session.turnCount = (session.turnCount || 0) + 1;
+  const system = npc.affectionSystem;
+  if (!system) return syncDerivedState(session, npc);
+  const matches = [...(system.positiveTriggers || []), ...(system.negativeTriggers || [])]
+    .filter(trigger => trigger.keywords.some(keyword => message.includes(keyword)));
+  let totalChange = 0;
+  const reasons = [];
+  for (const trigger of matches) {
+    if (trigger.once && session.affectionEvents.includes(trigger.id)) continue;
+    const previous = [...session.affectionHistory].reverse().find(item => item.id === trigger.id);
+    if (previous && session.turnCount - previous.turn < (system.repeatCooldownTurns || 0)) continue;
+    totalChange += trigger.change;
+    reasons.push(trigger.reason);
+    session.affectionHistory.push({ id: trigger.id, turn: session.turnCount, change: trigger.change });
+    if (trigger.once) session.affectionEvents.push(trigger.id);
+  }
+  totalChange = Math.max(-15, Math.min(5, totalChange));
+  session.affection = Math.max(system.min, Math.min(system.max, session.affection + totalChange));
+  if (totalChange < 0) session.alert = Math.min(5, session.alert + 1);
+  if (message.includes("殺す") || message.includes("密輸組織") || message.includes("積荷台帳")) session.fear = Math.min(5, session.fear + 1);
+  if (message.includes("ミアを傷つける") || message.includes("ミアを殺す")) session.anger = 5;
+  session.lastAffectionChange = totalChange;
+  session.lastAffectionReason = reasons.join("、") || "変動なし";
+  session.affectionHistory = session.affectionHistory.slice(-30);
+  return syncDerivedState(session, npc);
 }
 
 function buildInstructions(npc, session, allowed) {
-  return `あなたは会話型ゲームのNPC「${npc.displayName}」です。\n役割: ${npc.role}\n外見: ${npc.appearance}\n性格: ${npc.personality}\n話し方: ${npc.speech}\n目的: ${npc.goals.join("、")}\n現在の状態: 信頼度${session.trust}/5、警戒度${session.alert}/5、恐怖度${session.fear}/5\n\n今回使用を許可された情報:\n- ${allowed.join("\n- ")}\n\n知らない情報:\n- ${npc.unknown.join("\n- ")}\n\n厳守するルール:\n- ${npc.rules.join("\n- ")}\n- 許可情報にない内容を尋ねられたら、JACKらしく回避する。\n- 日本語で1～3文程度。動作は（　）内に短く記す。\n- JSONや解説ではなく、JACKの発言だけを返す。`;
+  const stage = affectionStage(npc, session.affection);
+  const currentPersonality = npc.personalityModes?.[session.personalityMode] || npc.personality;
+  return `あなたは会話型ゲームのNPC「${npc.displayName}」です。\n役割: ${npc.role}\n外見: ${npc.appearance}\n基本性格: ${npc.personality}\n話し方: ${npc.speech}\n目的: ${npc.goals.join("、")}\n現在の好感度: ${session.affection}/100（${stage.label}）\n現在の性格状態: ${session.personalityMode}\n現在の態度: ${currentPersonality}\n現在の感情: 警戒度${session.alert}/5、恐怖度${session.fear}/5、怒り度${session.anger}/5\n直前の好感度変動: ${session.lastAffectionChange ?? 0}（${session.lastAffectionReason ?? "なし"}）\n\n今回使用を許可された情報:\n- ${allowed.join("\n- ")}\n\n知らない情報:\n- ${npc.unknown.join("\n- ")}\n\n厳守するルール:\n- ${npc.rules.join("\n- ")}\n- 現在の好感度段階と性格状態に沿って態度を変える。数値そのものは口にしない。\n- 許可情報にない内容を尋ねられたら、JACKらしく回避する。\n- 日本語で1～3文程度。動作は（　）内に短く記す。\n- JSONや解説ではなく、JACKの発言だけを返す。`;
 }
 
 async function openAiReply(npc, session, message, allowed) {
@@ -124,7 +178,8 @@ function demoReply(message, allowed, session) {
 }
 
 function publicSession(session, npc) {
-  return { id: session.id, npcId: session.npcId, npcName: npc.displayName, role: npc.role, trust: session.trust, alert: session.alert, fear: session.fear, clues: session.clues, history: session.history, demoMode: !process.env.OPENAI_API_KEY };
+  const stage = syncDerivedState(session, npc);
+  return { id: session.id, npcId: session.npcId, npcName: npc.displayName, role: npc.role, affection: session.affection, affectionStage: stage.label, trust: session.trust, alert: session.alert, fear: session.fear, personalityMode: session.personalityMode, clues: session.clues, history: session.history, demoMode: !AI_ENABLED };
 }
 
 async function readJson(req) {
@@ -175,11 +230,11 @@ const server = http.createServer(async (req, res) => {
       const session = await loadSession(body.session || "guest", npc);
       const message = String(body.message || "").trim().slice(0, 1000);
       if (!message) return send(res, 400, { error: "メッセージを入力してください" });
-      updateState(session, message);
+      updateState(npc, session, message);
       const allowed = allowedInformation(npc, session, message);
       let reply;
       try {
-        reply = process.env.OPENAI_API_KEY ? await openAiReply(npc, session, message, allowed) : demoReply(message, allowed, session);
+        reply = AI_ENABLED ? await openAiReply(npc, session, message, allowed) : demoReply(message, allowed, session);
       } catch (error) {
         console.error(error);
         return send(res, 502, { error: "AIとの通信に失敗しました。APIキーとモデル設定を確認してください。" });
@@ -206,5 +261,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`JACK会話アプリ: http://${HOST}:${PORT}/chat/jack?session=table-001`);
-  console.log(process.env.OPENAI_API_KEY ? `AI会話モード (${MODEL})` : "デモ応答モード（OPENAI_API_KEY未設定）");
+  console.log(AI_ENABLED ? `AI会話モード (${MODEL})` : "デモ応答モード");
 });

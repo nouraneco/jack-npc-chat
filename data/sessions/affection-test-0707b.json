@@ -1,0 +1,56 @@
+{
+  "id": "affection-test-0707b",
+  "npcId": "jack",
+  "affection": 35,
+  "trust": 1,
+  "alert": 3,
+  "fear": 1,
+  "anger": 0,
+  "personalityMode": "alert",
+  "turnCount": 2,
+  "clues": [],
+  "revealed": [],
+  "affectionEvents": [],
+  "affectionHistory": [
+    {
+      "id": "protect_mia",
+      "turn": 1,
+      "change": 5
+    },
+    {
+      "id": "promise",
+      "turn": 1,
+      "change": 4
+    },
+    {
+      "id": "accuse",
+      "turn": 2,
+      "change": -5
+    }
+  ],
+  "history": [
+    {
+      "role": "assistant",
+      "content": "……見ない顔だな。事件のことを聞きに来たのか？"
+    },
+    {
+      "role": "user",
+      "content": "ミアを守ると約束する"
+    },
+    {
+      "role": "assistant",
+      "content": "（相手の表情を静かに読む）俺が知っていることなら話す。何を確かめたい？"
+    },
+    {
+      "role": "user",
+      "content": "お前が犯人だ"
+    },
+    {
+      "role": "assistant",
+      "content": "俺は犯人を見ていない。憶測で誰かを縛る気もない。"
+    }
+  ],
+  "updatedAt": "2026-07-07T14:35:39.774Z",
+  "lastAffectionChange": -5,
+  "lastAffectionReason": "証拠なく犯人扱いした"
+}

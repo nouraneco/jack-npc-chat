@@ -19,7 +19,8 @@ function render(data) {
   $("npc-name").textContent = data.npcName;
   $("npc-role").textContent = data.role;
   $("session-id").textContent = data.id;
-  $("trust").textContent = `${data.trust}/5`;
+  $("affection").textContent = `${data.affection}/100`;
+  $("affection-stage").textContent = data.affectionStage;
   $("alert").textContent = `${data.alert}/5`;
   $("fear").textContent = `${data.fear}/5`;
   $("mode").textContent = data.demoMode ? "デモ応答モード" : "AI会話モード";
