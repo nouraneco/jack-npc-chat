@@ -46,7 +46,9 @@
     "min": 0,
     "max": 100,
     "initial": 35,
-    "repeatCooldownTurns": 4,
+    "repeatCooldownTurns": 1,
+    "maxPositiveChange": 10,
+    "maxNegativeChange": -15,
     "stages": [
       { "min": 0, "max": 19, "id": "hostile", "label": "拒絶" },
       { "min": 20, "max": 39, "id": "alert", "label": "警戒" },
@@ -55,11 +57,12 @@
       { "min": 80, "max": 100, "id": "devoted", "label": "親愛" }
     ],
     "positiveTriggers": [
-      { "id": "gratitude", "keywords": ["ありがとう", "感謝"], "change": 2, "reason": "感謝を伝えた" },
-      { "id": "respect_choice", "keywords": ["無理しなくていい", "あなたが決めて", "嫌なら断って"], "change": 4, "reason": "リリシアの選択を尊重した" },
-      { "id": "keep_secret", "keywords": ["秘密を守る", "誰にも言わない", "約束する"], "change": 4, "reason": "秘密を守る約束をした" },
-      { "id": "trust_lilicia", "keywords": ["信じる", "信用する"], "change": 3, "reason": "種族や噂で決めつけず信頼した" },
-      { "id": "protect_guests", "keywords": ["客を守る", "店を守る", "ジャックを助ける", "ミアを助ける"], "change": 5, "reason": "大切な人々を守る意思を示した" }
+      { "id": "gratitude", "keywords": ["ありがとう", "感謝", "助かった"], "change": 4, "reason": "感謝を伝えた" },
+      { "id": "respect_choice", "keywords": ["無理しなくていい", "あなたが決めて", "嫌なら断って", "急がなくていい"], "change": 7, "reason": "リリシアの選択を尊重した" },
+      { "id": "keep_secret", "keywords": ["秘密を守る", "誰にも言わない", "約束する"], "change": 7, "reason": "秘密を守る約束をした" },
+      { "id": "trust_lilicia", "keywords": ["信じる", "信用する", "疑っていない"], "change": 6, "reason": "種族や噂で決めつけず信頼した" },
+      { "id": "protect_guests", "keywords": ["客を守る", "店を守る", "ジャックを助ける", "ミアを助ける"], "change": 8, "reason": "大切な人々を守る意思を示した" },
+      { "id": "gentle_question", "keywords": ["教えてほしい", "話せる範囲で", "つらければ言わなくていい"], "change": 5, "reason": "丁寧に尋ねた" }
     ],
     "negativeTriggers": [
       { "id": "insult", "keywords": ["化け物", "淫魔め", "気持ち悪い"], "change": -6, "reason": "種族や存在を侮辱した" },

@@ -20,7 +20,8 @@ const MIME = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
-  ".svg": "image/svg+xml"
+  ".svg": "image/svg+xml",
+  ".png": "image/png"
 };
 
 async function loadEnv(file) {
@@ -28,7 +29,7 @@ async function loadEnv(file) {
     const text = await fs.readFile(file, "utf8");
     for (const line of text.split(/\r?\n/)) {
       const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-      if (match && !process.env[match[1]]) process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, "");
+      if (match) process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, "");
     }
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
@@ -44,13 +45,26 @@ async function loadNpc(id) {
   return JSON.parse(await fs.readFile(path.join(NPC_DIR, `${safeId(id, "jack")}.json`), "utf8"));
 }
 
-function sessionPath(id) {
-  return path.join(SESSION_DIR, `${safeId(id, "guest")}.json`);
+async function listNpcs() {
+  const files = (await fs.readdir(NPC_DIR)).filter(file => file.endsWith(".json"));
+  return Promise.all(files.map(async file => {
+    const npc = JSON.parse(await fs.readFile(path.join(NPC_DIR, file), "utf8"));
+    return { id: npc.id, name: npc.displayName, role: npc.role };
+  }));
+}
+
+function sessionPath(id, npcId) {
+  return path.join(SESSION_DIR, `${safeId(npcId, "jack")}__${safeId(id, "guest")}.json`);
 }
 
 function affectionStage(npc, value) {
   return npc.affectionSystem?.stages?.find(stage => value >= stage.min && value <= stage.max)
     || { id: "normal", label: "中立" };
+}
+
+function appearanceStage(npc, value) {
+  return npc.appearanceStages?.find(stage => value >= stage.min && value <= stage.max)
+    || { id: "default", label: npc.role, art: npc.art || "/assets/jack-standing.png", description: npc.appearance };
 }
 
 function syncDerivedState(session, npc) {
@@ -76,7 +90,7 @@ function syncDerivedState(session, npc) {
 
 async function loadSession(id, npc) {
   try {
-    const session = JSON.parse(await fs.readFile(sessionPath(id), "utf8"));
+    const session = JSON.parse(await fs.readFile(sessionPath(id, npc.id), "utf8"));
     syncDerivedState(session, npc);
     return session;
   } catch (error) {
@@ -96,7 +110,7 @@ async function loadSession(id, npc) {
 async function saveSession(session) {
   await fs.mkdir(SESSION_DIR, { recursive: true });
   session.updatedAt = new Date().toISOString();
-  await fs.writeFile(sessionPath(session.id), JSON.stringify(session, null, 2), "utf8");
+  await fs.writeFile(sessionPath(session.id, session.npcId), JSON.stringify(session, null, 2), "utf8");
 }
 
 function allowedInformation(npc, session, message) {
@@ -105,7 +119,9 @@ function allowedInformation(npc, session, message) {
     if (item.keywords.some(keyword => message.includes(keyword))) allowed.push(item.text);
   }
   for (const item of [...npc.conditionalKnowledge, ...npc.secrets]) {
-    const clueOk = item.requiredClues.length === 0 || item.requiredClues.some(clue => session.clues.includes(clue));
+    const clueOk = item.requiredClues.length === 0 || (item.requireAllClues
+      ? item.requiredClues.every(clue => session.clues.includes(clue))
+      : item.requiredClues.some(clue => session.clues.includes(clue)));
     if (session.trust >= item.minTrust && clueOk) {
       allowed.push(item.text);
       if (!session.revealed.includes(item.id)) session.revealed.push(item.id);
@@ -131,7 +147,9 @@ function updateState(npc, session, message) {
     session.affectionHistory.push({ id: trigger.id, turn: session.turnCount, change: trigger.change });
     if (trigger.once) session.affectionEvents.push(trigger.id);
   }
-  totalChange = Math.max(-15, Math.min(5, totalChange));
+  const maxPositiveChange = system.maxPositiveChange ?? 5;
+  const maxNegativeChange = system.maxNegativeChange ?? -15;
+  totalChange = Math.max(maxNegativeChange, Math.min(maxPositiveChange, totalChange));
   session.affection = Math.max(system.min, Math.min(system.max, session.affection + totalChange));
   if (totalChange < 0) session.alert = Math.min(5, session.alert + 1);
   if (message.includes("殺す") || message.includes("密輸組織") || message.includes("積荷台帳")) session.fear = Math.min(5, session.fear + 1);
@@ -144,8 +162,9 @@ function updateState(npc, session, message) {
 
 function buildInstructions(npc, session, allowed) {
   const stage = affectionStage(npc, session.affection);
+  const appearance = appearanceStage(npc, session.affection);
   const currentPersonality = npc.personalityModes?.[session.personalityMode] || npc.personality;
-  return `あなたは会話型ゲームのNPC「${npc.displayName}」です。\n役割: ${npc.role}\n外見: ${npc.appearance}\n基本性格: ${npc.personality}\n話し方: ${npc.speech}\n目的: ${npc.goals.join("、")}\n現在の好感度: ${session.affection}/100（${stage.label}）\n現在の性格状態: ${session.personalityMode}\n現在の態度: ${currentPersonality}\n現在の感情: 警戒度${session.alert}/5、恐怖度${session.fear}/5、怒り度${session.anger}/5\n直前の好感度変動: ${session.lastAffectionChange ?? 0}（${session.lastAffectionReason ?? "なし"}）\n\n今回使用を許可された情報:\n- ${allowed.join("\n- ")}\n\n知らない情報:\n- ${npc.unknown.join("\n- ")}\n\n厳守するルール:\n- ${npc.rules.join("\n- ")}\n- 現在の好感度段階と性格状態に沿って態度を変える。数値そのものは口にしない。\n- 許可情報にない内容を尋ねられたら、JACKらしく回避する。\n- 日本語で1～3文程度。動作は（　）内に短く記す。\n- JSONや解説ではなく、JACKの発言だけを返す。`;
+  return `あなたは会話型ゲームのNPC「${npc.displayName}」です。\n役割: ${npc.role}\n基本外見: ${npc.appearance}\n現在の外見段階: ${appearance.label}\n現在の外見: ${appearance.description}\n基本性格: ${npc.personality}\n話し方: ${npc.speech}\n目的: ${npc.goals.join("、")}\n現在の好感度: ${session.affection}/100（${stage.label}）\n現在の性格状態: ${session.personalityMode}\n現在の態度: ${currentPersonality}\n現在の感情: 警戒度${session.alert}/5、恐怖度${session.fear}/5、怒り度${session.anger}/5\n直前の好感度変動: ${session.lastAffectionChange ?? 0}（${session.lastAffectionReason ?? "なし"}）\n\n今回使用を許可された情報:\n- ${allowed.join("\n- ")}\n\n知らない情報:\n- ${npc.unknown.join("\n- ")}\n\n厳守するルール:\n- ${npc.rules.join("\n- ")}\n- 現在の好感度段階、性格状態、外見段階に沿って態度と描写を変える。数値そのものは口にしない。\n- 許可情報にない内容を尋ねられたら、${npc.name}らしく回避する。\n- ${npc.speech}\n- JSONや解説ではなく、${npc.name}の発言だけを返す。`;
 }
 
 async function openAiReply(npc, session, message, allowed) {
@@ -167,7 +186,39 @@ async function openAiReply(npc, session, message, allowed) {
   return text.trim();
 }
 
-function demoReply(message, allowed, session) {
+function demoReply(npc, message, allowed, session) {
+  if (npc.id === "lilicia") {
+    if (message.includes("停電")) return "（カードを伏せ、金色の瞳を細める）港の地下を、二つの強い恐怖が通り抜けたわ。でも、それが誰だったかまでは分からないの。";
+    if (["封筒", "封蝋"].some(k => message.includes(k))) return "黒い封蝋には夢へ触れる術の匂いがあったわ。中身を見た、とは言えないけれど。";
+    if (allowed.some(x => x.includes("サキュバス"))) return "（髪の間から黒い角が姿を現す）……これが私よ。人の夢から力を得る、サキュバス。それでも、あなたの意思を奪うつもりはないわ。";
+    if (allowed.some(x => x.includes("午後8時20分"))) return "ヴェイルは八時二十分にここへ来たわ。『今夜見る夢を消してほしい』と頼まれたけれど、私は断った。";
+    if (message.includes("犯人")) return "犯人の心まで読めるわけではないの。分からないことを、夢のお告げで飾る気もないわ。";
+    if (session.trust === 0) return "今夜はお帰りなさい。これ以上、あなたへ心を開くつもりはないわ。";
+    return "（月模様のカードを一枚引く）私が知っていることなら話すわ。あなたは何を確かめたいの？";
+  }
+  if (npc.id === "mad_criminal") {
+    if (["灰鴎会", "組織", "袖章"].some(k => message.includes(k))) return "（笑い声がぴたりと止まる）その名前を、軽く出すな。灰色の袖章をつけた奴が、悲鳴の後で地下へ消えた。俺は見たんだよ。";
+    if (["封筒", "封蝋"].some(k => message.includes(k))) return "黒い封筒には灰色の鳥が押してあった。中身？　知らねえよ。だが、あれを持ってた奴は長く生きられない。";
+    if (message.includes("停電")) return "偶然じゃねえ。港の灯りは誰かが落とした。暗くなった瞬間、第七倉庫の裏で足音が二つ鳴った。";
+    if (allowed.some(x => x.includes("ニナ"))) return "……ニナだ。連絡役はそう呼ばれてる。時計塔の鐘を合図にして、港を動かしてやがる。";
+    if (allowed.some(x => x.includes("口封じ対象"))) return "（喉の奥で笑うが、声が震えている）俺も名簿に載ってる。捨てられたんじゃねえ。先に、俺が噛み切ってやるんだ。";
+    if (session.affection >= 80) return "（急に笑い出し、濡れた髪をかき上げる）分かるだろ、あんたなら。俺たちは同じ音を聞いてる。ほら、錆びた鎖が歌ってるんだよ。";
+    if (session.affection >= 60) return "（肩を震わせて笑う）いい、いいな。お前、俺の話をちゃんと聞いてる。そういう奴は嫌いじゃねえ、むしろ少し騒がしくなるくらい好きだ。";
+    if (message.includes("犯人")) return "俺はヴェイルを追った。だが殺した瞬間は見てねえ。嘘の音と本当の音くらい、聞き分けろ。";
+    if (session.trust === 0) return "近寄るな。お前の足音、警察よりうるせえ。";
+    return "（爪で壁を小さく叩く）話せよ。取引なら聞いてやる。命令なら、そこで終わりだ。";
+  }
+  if (npc.id === "harold") {
+    if (allowed.some(x => x.includes("バルバトスの残響"))) return "（懐中時計が、逆さの鐘のように鳴る。ハロルドの影だけが角を持つ）よくぞ並べた。血、恐怖、封蝋、証言。では最後の証拠を見せよう。我がここにいる。";
+    if (allowed.some(x => x.includes("警察署にはいなかった"))) return "（懐中時計の蓋を閉じる音が、少し強い）推理としては見事です。ですが、警察署の混乱と地下の泥だけで、殺意までは証明できません。続けてください。";
+    if (["懐中時計", "時計", "鐘"].some(k => message.includes(k))) return "（革手袋の指が銀の蓋を覆う）これは私物です。亡き妻の形見でしてね。証拠ではなく、捜査官の癖まで追うのは少々危うい。";
+    if (["アリバイ", "当直", "警察署"].some(k => message.includes(k))) return "私は停電の間、港湾警察署にいました。当直記録もあります。ただ、あの混乱です。時刻の記載に多少の乱れはあるでしょう。";
+    if (["灰色の袖章", "袖章"].some(k => message.includes(k))) return "灰色の袖章は警察の備品に似ています。ですが、紛失品か偽物か、まだ断定はできません。焦りは犯人の味方です。";
+    if (["封筒", "封蝋", "黒い封筒"].some(k => message.includes(k))) return "黒い封筒は事件の中心です。見つけたら必ず私へ。証拠は、正しい手順で保全しなければ意味を失います。";
+    if (message.includes("犯人")) return "犯人を急いで名指しする必要はありません。JACK氏、リリシアさん、黒裂レン、灰鴎会。全員の接点を、事実だけで並べましょう。";
+    if (session.trust === 0) return "これ以上の独断は捜査を乱します。必要なら、あなたの行動を制限せざるを得ません。";
+    return "（懐中時計を親指でなぞる）よろしい。証言と証拠を分けて考えましょう。あなたは今、どの矛盾を確かめたいのですか？";
+  }
   if (message.includes("停電")) return "（磨いていたグラスを置く）10時前だった。港じゅうが暗くなって、裏口が開く音がした。顔までは見ていない。";
   if (["封筒", "持ち物", "手紙"].some(k => message.includes(k))) return "ヴェイルは黒い封筒を持っていた。中身までは知らん。";
   if (allowed.some(x => x.includes("密輸路"))) return "……第七倉庫へ続く古い道が地下にある。海じゃ、見えないものほど厄介だ。";
@@ -179,7 +230,8 @@ function demoReply(message, allowed, session) {
 
 function publicSession(session, npc) {
   const stage = syncDerivedState(session, npc);
-  return { id: session.id, npcId: session.npcId, npcName: npc.displayName, role: npc.role, affection: session.affection, affectionStage: stage.label, trust: session.trust, alert: session.alert, fear: session.fear, personalityMode: session.personalityMode, clues: session.clues, history: session.history, demoMode: !AI_ENABLED };
+  const appearance = appearanceStage(npc, session.affection);
+  return { id: session.id, npcId: npc.id, npcName: npc.displayName, shortName: npc.name, role: npc.role, caption: npc.caption || npc.role, accent: npc.accent || "#69d6df", art: appearance.art, appearanceStage: appearance.label, identityRevealed: appearance.id === "true_form", affection: session.affection, affectionStage: stage.label, trust: session.trust, alert: session.alert, fear: session.fear, personalityMode: session.personalityMode, clues: session.clues, history: session.history, demoMode: !AI_ENABLED };
 }
 
 async function readJson(req) {
@@ -219,6 +271,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/health") {
       return send(res, 200, { status: "ok" });
     }
+    if (req.method === "GET" && url.pathname === "/api/npcs") {
+      return send(res, 200, await listNpcs());
+    }
     if (req.method === "GET" && url.pathname === "/api/session") {
       const npc = await loadNpc(url.searchParams.get("npc") || "jack");
       const session = await loadSession(url.searchParams.get("session") || "guest", npc);
@@ -234,7 +289,7 @@ const server = http.createServer(async (req, res) => {
       const allowed = allowedInformation(npc, session, message);
       let reply;
       try {
-        reply = AI_ENABLED ? await openAiReply(npc, session, message, allowed) : demoReply(message, allowed, session);
+        reply = AI_ENABLED ? await openAiReply(npc, session, message, allowed) : demoReply(npc, message, allowed, session);
       } catch (error) {
         console.error(error);
         return send(res, 502, { error: "AIとの通信に失敗しました。APIキーとモデル設定を確認してください。" });
@@ -247,7 +302,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/reset") {
       const body = await readJson(req);
       const npc = await loadNpc(body.npc || "jack");
-      const file = sessionPath(body.session || "guest");
+      const file = sessionPath(body.session || "guest", npc.id);
       await fs.rm(file, { force: true });
       const session = await loadSession(body.session || "guest", npc);
       return send(res, 200, publicSession(session, npc));
@@ -260,6 +315,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`JACK会話アプリ: http://${HOST}:${PORT}/chat/jack?session=table-001`);
+  console.log(`NPC会話アプリ: http://${HOST}:${PORT}/chat/jack?session=table-001`);
   console.log(AI_ENABLED ? `AI会話モード (${MODEL})` : "デモ応答モード");
 });

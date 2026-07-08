@@ -42,7 +42,9 @@
     "min": 0,
     "max": 100,
     "initial": 50,
-    "repeatCooldownTurns": 3,
+    "repeatCooldownTurns": 1,
+    "maxPositiveChange": 10,
+    "maxNegativeChange": -15,
     "stages": [
       { "min": 0, "max": 19, "id": "hostile", "label": "冷淡" },
       { "min": 20, "max": 39, "id": "alert", "label": "管理" },
@@ -51,10 +53,11 @@
       { "min": 80, "max": 100, "id": "devoted", "label": "危険な庇護" }
     ],
     "positiveTriggers": [
-      { "id": "gratitude", "keywords": ["ありがとう", "感謝"], "change": 2, "reason": "捜査協力へ感謝した" },
-      { "id": "organize_evidence", "keywords": ["証拠を整理", "事実を整理", "時系列"], "change": 3, "reason": "冷静に証拠を整理した" },
-      { "id": "no_assumption", "keywords": ["決めつけない", "断定しない", "証拠で考える"], "change": 3, "reason": "容疑者を決めつけなかった" },
-      { "id": "cooperate", "keywords": ["協力する", "情報共有", "一緒に捜査"], "change": 4, "reason": "捜査協力を申し出た" }
+      { "id": "gratitude", "keywords": ["ありがとう", "感謝", "助かります"], "change": 4, "reason": "捜査協力へ感謝した" },
+      { "id": "organize_evidence", "keywords": ["証拠を整理", "事実を整理", "時系列"], "change": 6, "reason": "冷静に証拠を整理した" },
+      { "id": "no_assumption", "keywords": ["決めつけない", "断定しない", "証拠で考える"], "change": 6, "reason": "容疑者を決めつけなかった" },
+      { "id": "cooperate", "keywords": ["協力する", "情報共有", "一緒に捜査"], "change": 7, "reason": "捜査協力を申し出た" },
+      { "id": "respect_procedure", "keywords": ["手順を守る", "証拠を預ける", "警部に任せる"], "change": 5, "reason": "警察手順を尊重した" }
     ],
     "negativeTriggers": [
       { "id": "accuse_without_proof", "keywords": ["お前が犯人", "あなたが犯人", "ハロルドが犯人"], "change": -5, "reason": "証拠なしに犯人扱いした" },

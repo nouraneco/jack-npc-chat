@@ -24,7 +24,9 @@
     "min": 0,
     "max": 100,
     "initial": 18,
-    "repeatCooldownTurns": 3,
+    "repeatCooldownTurns": 1,
+    "maxPositiveChange": 10,
+    "maxNegativeChange": -15,
     "stages": [
       { "min": 0, "max": 19, "id": "hostile", "label": "敵対" },
       { "min": 20, "max": 39, "id": "alert", "label": "危険な取引" },
@@ -33,10 +35,11 @@
       { "min": 80, "max": 100, "id": "devoted", "label": "暴走親愛" }
     ],
     "positiveTriggers": [
-      { "id": "offer_deal", "keywords": ["取引", "条件", "交換"], "change": 3, "reason": "取引を提示した" },
-      { "id": "offer_protection", "keywords": ["守る", "保護", "かくまう"], "change": 5, "reason": "灰鴎会から守る意思を示した" },
-      { "id": "no_assumption", "keywords": ["決めつけない", "犯人と断定しない", "話を聞く"], "change": 4, "reason": "殺人犯と断定せず話を聞いた" },
-      { "id": "against_gulls", "keywords": ["灰鴎会を追う", "灰鴎会が敵", "灰鴎会を止める"], "change": 4, "reason": "灰鴎会を敵として扱った" }
+      { "id": "offer_deal", "keywords": ["取引", "条件", "交換", "見返り"], "change": 6, "reason": "取引を提示した" },
+      { "id": "offer_protection", "keywords": ["守る", "保護", "かくまう", "匿う"], "change": 8, "reason": "灰鴎会から守る意思を示した" },
+      { "id": "no_assumption", "keywords": ["決めつけない", "犯人と断定しない", "話を聞く", "まず聞く"], "change": 7, "reason": "殺人犯と断定せず話を聞いた" },
+      { "id": "against_gulls", "keywords": ["灰鴎会を追う", "灰鴎会が敵", "灰鴎会を止める"], "change": 7, "reason": "灰鴎会を敵として扱った" },
+      { "id": "clear_terms", "keywords": ["条件をはっきり", "約束する", "嘘はつかない"], "change": 5, "reason": "条件を明確にした" }
     ],
     "negativeTriggers": [
       { "id": "insult", "keywords": ["役立たず", "嘘つき", "黙れ"], "change": -6, "reason": "レンを侮辱した" },

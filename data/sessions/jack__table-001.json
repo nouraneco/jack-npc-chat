@@ -7,7 +7,7 @@
   "fear": 1,
   "anger": 0,
   "personalityMode": "alert",
-  "turnCount": 0,
+  "turnCount": 2,
   "clues": [],
   "revealed": [],
   "affectionEvents": [],
@@ -16,7 +16,25 @@
     {
       "role": "assistant",
       "content": "……見ない顔だな。事件のことを聞きに来たのか？"
+    },
+    {
+      "role": "user",
+      "content": "ああ。昨日の夜、何があった？"
+    },
+    {
+      "role": "assistant",
+      "content": "（グラスを拭きながら）ヴェイルは夜の九時ごろ、ここに来た。誰かを待ってるみたいで、裏口を何度も気にしてた。  \n……九時台のあたりで、港一帯が五分ほど真っ暗になった。俺が知ってるのは、それだけだ。"
+    },
+    {
+      "role": "user",
+      "content": "あの時の停電だな。"
+    },
+    {
+      "role": "assistant",
+      "content": "ああ。あの停電だ。（少し目を細める）  \nその間に、裏口が開く音を聞いた。……海が荒れる前みたいに、妙に嫌な間だった。"
     }
   ],
-  "updatedAt": "2026-07-07T15:17:34.081Z"
+  "updatedAt": "2026-07-08T10:41:48.436Z",
+  "lastAffectionChange": 0,
+  "lastAffectionReason": "変動なし"
 }

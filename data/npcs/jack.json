@@ -24,7 +24,9 @@
     "min": 0,
     "max": 100,
     "initial": 35,
-    "repeatCooldownTurns": 3,
+    "repeatCooldownTurns": 1,
+    "maxPositiveChange": 10,
+    "maxNegativeChange": -15,
     "stages": [
       { "min": 0, "max": 19, "id": "hostile", "label": "敵対" },
       { "min": 20, "max": 39, "id": "alert", "label": "警戒" },
@@ -33,10 +35,11 @@
       { "min": 80, "max": 100, "id": "devoted", "label": "親愛" }
     ],
     "positiveTriggers": [
-      { "id": "gratitude", "keywords": ["ありがとう", "感謝"], "change": 2, "reason": "感謝を伝えた" },
-      { "id": "protect_mia", "keywords": ["ミアを守る", "ミアを助ける"], "change": 5, "reason": "ミアを守る意思を示した" },
-      { "id": "trust_jack", "keywords": ["信じる", "信用する"], "change": 3, "reason": "JACKへの信頼を示した" },
-      { "id": "promise", "keywords": ["約束する", "秘密を守る"], "change": 4, "reason": "約束を示した" }
+      { "id": "gratitude", "keywords": ["ありがとう", "感謝", "助かった"], "change": 4, "reason": "感謝を伝えた" },
+      { "id": "protect_mia", "keywords": ["ミアを守る", "ミアを助ける", "ミアを責めない"], "change": 8, "reason": "ミアを守る意思を示した" },
+      { "id": "trust_jack", "keywords": ["信じる", "信用する", "疑っていない"], "change": 6, "reason": "JACKへの信頼を示した" },
+      { "id": "promise", "keywords": ["約束する", "秘密を守る", "誰にも言わない"], "change": 7, "reason": "約束を示した" },
+      { "id": "listen_calmly", "keywords": ["話を聞く", "落ち着いて", "決めつけない"], "change": 5, "reason": "落ち着いて話を聞いた" }
     ],
     "negativeTriggers": [
       { "id": "insult", "keywords": ["嘘つき", "黙れ", "役立たず"], "change": -4, "reason": "JACKを侮辱した" },
