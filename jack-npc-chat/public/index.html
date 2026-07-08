@@ -3,29 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>事件関係者との会話</title>
+  <title>JACKとの会話</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <aside class="character-stage" id="character-stage" aria-label="NPCの立ち絵">
-    <div class="character-glow" aria-hidden="true"></div>
-    <img class="character-art" id="character-art" src="/assets/jack-standing.png" alt="会話中のNPC">
-    <div class="character-caption">
-      <span id="character-caption">THE ANCHOR TAVERN</span>
-      <strong id="character-name">JACK</strong>
-    </div>
-  </aside>
   <main class="app">
     <header class="profile">
-      <div class="portrait" id="portrait" aria-hidden="true">J</div>
+      <div class="portrait" aria-hidden="true">J</div>
       <div>
         <p class="eyebrow">FOG HARBOR / NPC CONVERSATION</p>
         <h1 id="npc-name">JACK</h1>
         <p id="npc-role">港町の酒場「錨亭」の店主</p>
       </div>
       <div class="header-actions">
-        <label class="npc-picker-label" for="npc-picker">会話相手</label>
-        <select id="npc-picker" class="npc-picker" aria-label="会話するNPCを選択"></select>
         <a class="ghost setup-link" href="/setup">公開の準備</a>
         <button id="reset" class="ghost" type="button">会話を最初から</button>
       </div>
@@ -33,9 +23,7 @@
 
     <section class="status" aria-label="会話状態">
       <span>卓ID <strong id="session-id">—</strong></span>
-      <span>好感度 <strong id="affection">—</strong></span>
-      <span>関係 <strong id="affection-stage">—</strong></span>
-      <span>姿 <strong id="appearance-stage">—</strong></span>
+      <span>信頼 <strong id="trust">—</strong></span>
       <span>警戒 <strong id="alert">—</strong></span>
       <span>恐怖 <strong id="fear">—</strong></span>
       <span id="mode" class="mode">確認中</span>
@@ -44,8 +32,8 @@
     <section id="messages" class="messages" aria-live="polite"></section>
 
     <form id="chat-form" class="composer">
-      <label for="message" class="sr-only">NPCへの発言</label>
-      <textarea id="message" rows="2" maxlength="1000" placeholder="話しかける…" required></textarea>
+      <label for="message" class="sr-only">JACKへの発言</label>
+      <textarea id="message" rows="2" maxlength="1000" placeholder="JACKに話しかける…" required></textarea>
       <button id="send" type="submit">送信</button>
     </form>
     <p class="hint">Enterで送信・Shift+Enterで改行</p>

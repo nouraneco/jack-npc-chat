@@ -1,0 +1,22 @@
+{
+  "id": "table-001",
+  "npcId": "lilicia",
+  "affection": 35,
+  "trust": 1,
+  "alert": 2,
+  "fear": 1,
+  "anger": 0,
+  "personalityMode": "alert",
+  "turnCount": 0,
+  "clues": [],
+  "revealed": [],
+  "affectionEvents": [],
+  "affectionHistory": [],
+  "history": [
+    {
+      "role": "assistant",
+      "content": "ようこそ、月蜜亭へ。（金色の瞳を細め、湯気の立つカップを差し出す）今夜眠れないのは、悪夢のせい？　それとも――誰かに会いたかったから？"
+    }
+  ],
+  "updatedAt": "2026-07-07T17:14:18.436Z"
+}

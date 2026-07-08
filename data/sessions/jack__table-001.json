@@ -1,0 +1,22 @@
+{
+  "id": "table-001",
+  "npcId": "jack",
+  "affection": 35,
+  "trust": 1,
+  "alert": 2,
+  "fear": 1,
+  "anger": 0,
+  "personalityMode": "alert",
+  "turnCount": 0,
+  "clues": [],
+  "revealed": [],
+  "affectionEvents": [],
+  "affectionHistory": [],
+  "history": [
+    {
+      "role": "assistant",
+      "content": "……見ない顔だな。事件のことを聞きに来たのか？"
+    }
+  ],
+  "updatedAt": "2026-07-07T15:17:34.081Z"
+}

@@ -6,7 +6,7 @@ const questions = [
     help:"まずは無料で公開画面だけ試すことも、本番用のAI会話まで設定することもできます。",
     choices:[
       {value:"demo",label:"まず無料で公開して試したい",detail:"用意済みのデモ返答で、外部リンクを確認します"},
-      {value:"ai",label:"NPCとAIで自由に会話したい",detail:"OpenAIのAPIキーを使います"}
+      {value:"ai",label:"JACKとAIで自由に会話したい",detail:"OpenAIのAPIキーを使います"}
     ]
   },
   {

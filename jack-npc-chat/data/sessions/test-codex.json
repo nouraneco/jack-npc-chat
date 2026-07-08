@@ -1,0 +1,24 @@
+{
+  "id": "test-codex",
+  "npcId": "jack",
+  "trust": 1,
+  "alert": 2,
+  "fear": 1,
+  "clues": [],
+  "revealed": [],
+  "history": [
+    {
+      "role": "assistant",
+      "content": "……見ない顔だな。事件のことを聞きに来たのか？"
+    },
+    {
+      "role": "user",
+      "content": "事件の夜、停電中に何か聞きませんでしたか？"
+    },
+    {
+      "role": "assistant",
+      "content": "（磨いていたグラスを置く）10時前だった。港じゅうが暗くなって、裏口が開く音がした。顔までは見ていない。"
+    }
+  ],
+  "updatedAt": "2026-07-05T07:55:59.636Z"
+}

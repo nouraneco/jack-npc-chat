@@ -1,7 +1,7 @@
 :root { color-scheme: dark; --bg:#0b1118; --panel:#111c27; --line:#263544; --ink:#edf3f8; --muted:#92a4b5; --accent:#69d6df; --jack:#1f3343; --user:#2457d6; }
 * { box-sizing:border-box; }
 body { margin:0; min-height:100vh; font-family:"Yu Gothic UI","Yu Gothic",system-ui,sans-serif; background:radial-gradient(circle at 18% 15%,#1b3548 0,var(--bg) 46%); color:var(--ink); overflow-x:hidden; }
-button,textarea { font:inherit; }
+button,textarea,select { font:inherit; }
 .app { position:relative; z-index:2; width:min(820px,calc(100% - 420px)); min-height:100vh; margin:0 max(28px,calc((100vw - 1240px)/2)) 0 auto; display:grid; grid-template-rows:auto auto 1fr auto auto; padding:26px; background:linear-gradient(90deg,#0b111800,#0b1118b8 7%,#0b1118e8 20%); }
 .character-stage { position:fixed; z-index:1; left:max(18px,calc(50vw - 620px)); bottom:0; width:390px; height:94vh; pointer-events:none; }
 .character-art { position:absolute; z-index:2; left:50%; bottom:-18px; height:92vh; max-width:390px; transform:translateX(-50%); object-fit:contain; object-position:center bottom; filter:drop-shadow(0 24px 32px #000b); }
@@ -17,6 +17,9 @@ button,textarea { font:inherit; }
 .ghost { margin-left:auto; border:1px solid var(--line); color:var(--muted); background:transparent; border-radius:10px; padding:9px 13px; cursor:pointer; }
 .header-actions { margin-left:auto; display:flex; gap:8px; align-items:center; }
 .header-actions .ghost { margin-left:0; }
+.npc-picker-label { color:var(--muted); font-size:11px; white-space:nowrap; }
+.npc-picker { max-width:245px; border:1px solid var(--line); color:var(--ink); background:#0f1923; border-radius:10px; padding:9px 30px 9px 11px; cursor:pointer; }
+.npc-picker:focus { border-color:var(--accent); outline:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent); }
 .setup-link { text-decoration:none; color:var(--accent); }
 .status { display:flex; flex-wrap:wrap; gap:10px 22px; padding:14px 4px; color:var(--muted); font-size:13px; border-bottom:1px solid var(--line); }
 .status strong { color:var(--ink); }
@@ -34,6 +37,9 @@ textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px #69d6df1f; }
 .composer button:disabled { opacity:.45; cursor:wait; }
 .hint { margin:7px 3px 0; color:#607485; font-size:11px; text-align:right; }
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+body[data-npc="lilicia"] { background:radial-gradient(circle at 18% 15%,#38234f 0,var(--bg) 48%); }
+body[data-npc="lilicia"] .message.assistant { background:#2b203a; }
+body[data-npc="lilicia"] .portrait { background:linear-gradient(145deg,#513567,#21172d); }
 @media (max-width:960px) {
   .character-stage { position:relative; left:auto; bottom:auto; width:100%; height:260px; overflow:hidden; border-bottom:1px solid var(--line); }
   .character-art { height:390px; max-width:280px; left:50%; bottom:-135px; }
@@ -41,4 +47,4 @@ textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px #69d6df1f; }
   .character-caption { left:22px; bottom:18px; }
   .app { width:min(920px,100%); min-height:calc(100vh - 260px); margin:auto; padding:22px; background:#0b1118e8; }
 }
-@media (max-width:640px) { .character-stage{height:210px}.character-art{height:330px;bottom:-122px}.character-caption{left:14px;bottom:12px}.app{padding:15px;min-height:calc(100vh - 210px)}.profile{align-items:flex-start;flex-wrap:wrap}.portrait{width:54px;height:54px}.profile h1{font-size:27px}.header-actions{width:100%;margin-left:0}.ghost{font-size:11px}.message{max-width:90%}.status{gap:8px 14px}.mode{width:100%;margin:0}.composer button{padding:0 18px} }
+@media (max-width:640px) { .character-stage{height:210px}.character-art{height:330px;bottom:-122px}.character-caption{left:14px;bottom:12px}.app{padding:15px;min-height:calc(100vh - 210px)}.profile{align-items:flex-start;flex-wrap:wrap}.portrait{width:54px;height:54px}.profile h1{font-size:27px}.header-actions{width:100%;margin-left:0;flex-wrap:wrap}.npc-picker-label{width:100%}.npc-picker{max-width:none;flex:1;min-width:210px}.ghost{font-size:11px}.message{max-width:90%}.status{gap:8px 14px}.mode{width:100%;margin:0}.composer button{padding:0 18px} }
